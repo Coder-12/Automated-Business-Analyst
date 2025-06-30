@@ -1,13 +1,14 @@
 # Automated Business Insights Agent
 
-This project features an autonomous AI agent that empowers non-technical users to perform complex data analysis on business datasets using only natural language commands. The agent acts as an automated data analyst, translating plain English questions into executable Python (`pandas`) code to find and present insights.
+This project features an autonomous AI agent that empowers users to perform complex data analysis on business datasets using only natural language commands. The agent is exposed via a REST API, acting as an automated data analyst that translates plain English questions into executable Python (`pandas`) code to find and present insights.
 
 ## Core Features
 
--   **Code Generation**: The agent dynamically writes and executes Python `pandas` code to answer user queries, automating a traditionally manual data analysis workflow.
--   **Schema Awareness**: Before starting, the agent is provided with the head and info of the dataset, grounding its reasoning process and significantly reducing code hallucinations.
--   **Self-Correction Loop**: The agent is engineered to be resilient. If it writes code that results in a Python error, it analyzes the traceback, understands its mistake, and automatically writes corrected code to retry the operation.
--   **Interactive CLI**: A user-friendly command-line interface allows for easy interaction with the agent.
+-   **Natural Language Interface**: Users interact with the agent through a simple API endpoint, asking questions in plain English.
+-   **Autonomous Code Generation**: The agent dynamically writes and executes Python `pandas` code to answer user queries, automating a traditionally manual data analysis workflow.
+-   **Resilient Self-Correction**: Engineered with a robust loop that enables the agent to automatically debug its own generated code by analyzing Python tracebacks and retrying with a corrected approach.
+-   **Schema-Aware Grounding**: The agent is initialized with the dataset's schema, which dramatically reduces code 'hallucinations' and ensures it uses valid column names and data types.
+-   **API-First Design**: Built with FastAPI, the project is a scalable, self-documenting, and ready-to-deploy web service, not just a script.
 
 ## Project Structure
 
@@ -20,7 +21,7 @@ This project features an autonomous AI agent that empowers non-technical users t
 ├── 📄 .env.example             # Example environment file
 ├── 📄 .gitignore
 ├── 📄 agent.py                 # Core agent logic, prompt engineering, and self-correction loop
-├── 📄 main.py                  # Entry point and interactive command-line interface
+├── 📄 main.py                  # FastAPI application entry point
 ├── 📄 README.md
 ├── 📄 requirements.txt         # Project dependencies
 └── 📄 tools.py                 # Defines the Python REPL tool for the agent
@@ -52,56 +53,67 @@ This project features an autonomous AI agent that empowers non-technical users t
         OPENAI_API_KEY="your_api_key_here"
         ```
 
-## How to Run
+## How to Run the Service
 
-Execute the `main.py` script from your terminal:
+Execute the `main.py` script from your terminal to start the FastAPI server using Uvicorn:
 
 ```bash
 python main.py
 ```
 
-The application will start, and you can begin asking questions about the provided sales data.
-
-### Example Questions
-
--   "What was the total revenue for all products?"
--   "Which product category had the highest total revenue?"
--   "What were the top 3 best-selling products by units sold?"
--   "Calculate the average unit price for each product category."
-
-## Example Interaction
+You will see output indicating that the server is running, typically on `http://127.0.0.1:8000`.
 
 ```
-$ python main.py
-Welcome to the Automated Business Analyst!
-You can ask questions about the sales data. Type 'exit' to quit.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+```
 
-Ask a question about the data: Which product category generated the most revenue?
-Thinking... (Turn 1/7)
-THOUGHT: The user wants to find the product category with the highest total revenue. I need to group the DataFrame by 'Product_Category' and sum the 'Total_Revenue' for each category. Then I can find the category with the maximum sum.
-ACTION (Executing Code):
----
-print(df.groupby('Product_Category')['Total_Revenue'].sum().idxmax())
----
-OBSERVATION:
----
-Code executed successfully. Output:
-Electronics
----
-Thinking... (Turn 2/7)
-THOUGHT: I have found the product category that generated the most revenue, which is 'Electronics'. I now need to find the actual revenue amount for this category to provide a complete answer. I will group by category again, sum the revenue, and then select the value for 'Electronics'.
-ACTION (Executing Code):
----
-print(df.groupby('Product_Category')['Total_Revenue'].sum().max())
----
-OBSERVATION:
----
-Code executed successfully. Output:
-20750
----
+## How to Interact with the API
 
-Final Answer:
-The product category that generated the most revenue was Electronics, with a total revenue of $20,750.
+The easiest way to interact with the API is through the automatically generated documentation.
+
+1.  **Open your web browser** and navigate to:
+    [**http://127.0.0.1:8000/docs**](http://127.0.0.1:8000/docs)
+
+2.  You will see the **FastAPI interactive documentation**.
+
+3.  Click on the `/query-agent/` endpoint to expand it.
+
+4.  Click the **"Try it out"** button.
+
+5.  In the **Request body** field, enter your question in JSON format. For example:
+    ```json
+    {
+      "question": "Which product category generated the most revenue?"
+    }
+    ```
+
+6.  Click the **"Execute"** button.
+
+7.  Scroll down to see the API's **response**, which will contain both your original question and the agent's final answer.
+
+### Example Questions to Try
+
+```json
+{ "question": "What was the total revenue for all products?" }
+```
+```json
+{ "question": "What were the top 3 best-selling products by units sold?" }
+```
+```json
+{ "question": "Calculate the average unit price for each product category." }
+```
+
+### Using `curl` (Alternative)
+
+You can also interact with the API from your command line using `curl`:
+
+```bash
+curl -X 'POST' \
+  'http://127.0.0.1:8000/query-agent/' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "question": "How many transactions are in the dataset?"
+  }'
 ```
 
 > **Security Warning**: This project uses Python's `exec()` function to run code generated by an LLM. This is for demonstration purposes in a controlled environment. Never expose this functionality to untrusted users on the internet without proper, robust sandboxing (e.g., running the code execution in a separate, isolated Docker container with strict resource limits).

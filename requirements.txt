@@ -3,3 +3,5 @@ langchain
 pandas
 python-dotenv
 tabulate
+fastapi
+uvicorn[standard]

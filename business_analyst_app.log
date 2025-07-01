@@ -1,5 +1,0 @@
-2025-07-01 12:01:02,982 - INFO - Logging started fresh.
-2025-07-01 12:01:10,728 - INFO - My question: What were the top 3 products by total revenue?
-2025-07-01 12:01:10,729 - INFO - final_answer: Could not determine the answer.
-2025-07-01 12:01:10,729 - INFO - agent_generator: <generator object create_analyst_agent at 0x14bb645c0>
-2025-07-01 12:01:14,399 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"

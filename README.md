@@ -1,14 +1,16 @@
-# Automated Business Insights Agent
+# Autonomous Business Insights Agent
 
-This project features an autonomous AI agent that empowers users to perform complex data analysis on business datasets using only natural language commands. The agent is exposed via a REST API, acting as an automated data analyst that translates plain English questions into executable Python (`pandas`) code to find and present insights.
+This project features an autonomous AI agent that empowers users to perform complex data analysis on business datasets using only natural language commands. The agent acts as an automated data analyst, leveraging a powerful Large Language Model (LLM) and the LangChain framework to translate plain English questions into executable Python (`pandas`) code to find and present insights.
+
+This project was built with a focus on reliability and professional engineering practices, using the battle-tested `create_pandas_dataframe_agent` from LangChain to ensure robust, multi-step reasoning.
 
 ## Core Features
 
--   **Natural Language Interface**: Users interact with the agent through a simple API endpoint, asking questions in plain English.
--   **Autonomous Code Generation**: The agent dynamically writes and executes Python `pandas` code to answer user queries, automating a traditionally manual data analysis workflow.
--   **Resilient Self-Correction**: Engineered with a robust loop that enables the agent to automatically debug its own generated code by analyzing Python tracebacks and retrying with a corrected approach.
--   **Schema-Aware Grounding**: The agent is initialized with the dataset's schema, which dramatically reduces code 'hallucinations' and ensures it uses valid column names and data types.
--   **API-First Design**: Built with FastAPI, the project is a scalable, self-documenting, and ready-to-deploy web service, not just a script.
+-   **Natural Language to Code**: Translates complex questions like "was revenue higher in March than January?" into a series of `pandas` commands.
+-   **Robust Agentic Workflow**: Powered by LangChain's agent executor, which reliably handles multi-step reasoning, self-correction, and tool execution.
+-   **Secure by Design**: Acknowledges and correctly handles LangChain's built-in security guardrails for executing Python code.
+-   **API-Ready**: The entire application is served via a FastAPI endpoint, making it a self-contained service ready for integration into other applications or dashboards.
+-   **Containerized & Portable**: Includes a `Dockerfile` for easy packaging and deployment, ensuring the application runs consistently in any environment.
 
 ## Project Structure
 
@@ -18,13 +20,13 @@ This project features an autonomous AI agent that empowers users to perform comp
 ├── 📂 data/
 |   └── sales_data_sample.csv  # Sample data for analysis
 |
-├── 📄 .env.example             # Example environment file
+├── 📄 .env                   # For storing API keys (ignored by git)
 ├── 📄 .gitignore
-├── 📄 agent.py                 # Core agent logic, prompt engineering, and self-correction loop
-├── 📄 main.py                  # FastAPI application entry point
+├── 📄 agent.py                # Core logic using LangChain's pandas agent
+├── 📄 Dockerfile              # Instructions for building the container
+├── 📄 main.py                 # FastAPI application to serve the agent
 ├── 📄 README.md
-├── 📄 requirements.txt         # Project dependencies
-└── 📄 tools.py                 # Defines the Python REPL tool for the agent
+└── 📄 requirements.txt        # Project dependencies
 ```
 
 ## Setup & Installation
@@ -47,73 +49,66 @@ This project features an autonomous AI agent that empowers users to perform comp
     ```
 
 4.  **Set up your environment variables:**
-    -   Rename the `.env.example` file to `.env`.
+    -   Create a file named `.env` in the root directory.
     -   Open the `.env` file and add your OpenAI API key:
         ```
         OPENAI_API_KEY="your_api_key_here"
         ```
 
-## How to Run the Service
+## How to Run
 
-Execute the `main.py` script from your terminal to start the FastAPI server using Uvicorn:
+You can run the application in two ways:
+
+#### 1. For Local Development (with Uvicorn)
+
+This method is best for quick testing and development.
 
 ```bash
-python main.py
+uvicorn main:app --reload
 ```
 
-You will see output indicating that the server is running, typically on `http://127.0.0.1:8000`.
+The server will start on `http://127.0.0.1:8000`.
 
+#### 2. Using Docker (for Production & Portability)
+
+This method packages the application into a self-contained container. Make sure you have Docker installed and running.
+
+```bash
+# 1. Build the Docker image
+docker build -t business-analyst-agent .
+
+# 2. Run the Docker container
+docker run -d -p 8000:8000 --env-file .env business-analyst-agent
 ```
-INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
-```
 
-## How to Interact with the API
+## How to Query the Agent
 
-The easiest way to interact with the API is through the automatically generated documentation.
+Once the server is running (using either method), you can interact with the agent via its API.
 
-1.  **Open your web browser** and navigate to:
-    [**http://127.0.0.1:8000/docs**](http://127.0.0.1:8000/docs)
+1.  Open your web browser and navigate to the interactive documentation:
+    **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**
 
-2.  You will see the **FastAPI interactive documentation**.
+2.  Expand the `POST /query` endpoint and click "Try it out".
 
-3.  Click on the `/query-agent/` endpoint to expand it.
+3.  In the "Request body" text box, enter your question in JSON format.
 
-4.  Click the **"Try it out"** button.
+### Example Queries
 
-5.  In the **Request body** field, enter your question in JSON format. For example:
+-   **Simple Aggregation:**
     ```json
-    {
-      "question": "Which product category generated the most revenue?"
-    }
+    { "question": "What is the total revenue for all sales?" }
+    ```
+-   **Grouping & Ranking:**
+    ```json
+    { "question": "What were the top 3 products by total revenue?" }
+    ```
+-   **Filtering & Context:**
+    ```json
+    { "question": "For the 'Electronics' category only, what was the total number of units sold?" }
+    ```
+-   **Multi-Step Reasoning:**
+    ```json
+    { "question": "Was the total revenue in March higher than in January?" }
     ```
 
-6.  Click the **"Execute"** button.
-
-7.  Scroll down to see the API's **response**, which will contain both your original question and the agent's final answer.
-
-### Example Questions to Try
-
-```json
-{ "question": "What was the total revenue for all products?" }
-```
-```json
-{ "question": "What were the top 3 best-selling products by units sold?" }
-```
-```json
-{ "question": "Calculate the average unit price for each product category." }
-```
-
-### Using `curl` (Alternative)
-
-You can also interact with the API from your command line using `curl`:
-
-```bash
-curl -X 'POST' \
-  'http://127.0.0.1:8000/query-agent/' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "question": "How many transactions are in the dataset?"
-  }'
-```
-
-> **Security Warning**: This project uses Python's `exec()` function to run code generated by an LLM. This is for demonstration purposes in a controlled environment. Never expose this functionality to untrusted users on the internet without proper, robust sandboxing (e.g., running the code execution in a separate, isolated Docker container with strict resource limits).
+4.  Click "Execute" to see the agent's response. The agent's step-by-step reasoning will be printed in the server console (thanks to `verbose=True`).
